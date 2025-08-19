@@ -1,5 +1,6 @@
 import { User } from '../../entities/user.entity';
 import { ResponseUserDto } from '../dto/response-user.dto';
+import { SocialMediaMapper } from '../../social-media/mappers/social-media.mapper';
 
 export class UserMapper {
     static toResponseDto(user: User): ResponseUserDto {
@@ -9,6 +10,7 @@ export class UserMapper {
             lastName: user.lastName,
             phone: user.phone,
             email: user.email,
+            socialMedia: user.socialMedia ? SocialMediaMapper.toResponseDtoArray(user.socialMedia, user.id) : [],
         };
     }
 
