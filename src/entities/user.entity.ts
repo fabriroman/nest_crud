@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { SocialMedia } from "./social-media.entity";
 
 @Entity('users')
 export class User {
@@ -16,5 +17,8 @@ export class User {
 
     @Column({ nullable: false }) 
     email: string;
+
+    @OneToMany(() => SocialMedia, socialMedia => socialMedia.user)
+    socialMedia: SocialMedia[];
 
 }
