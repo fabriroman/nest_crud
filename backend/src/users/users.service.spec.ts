@@ -73,28 +73,33 @@ describe('UsersService', () => {
     expect(service).toBeDefined();
   });
 
-
   //fndAl
 
   describe('findAll', () => {
     it('should return array of users', async () => {
       repository.find.mockResolvedValue([mockUser]);
-      (UserMapper.toResponseDtoArray as jest.Mock).mockReturnValue([mockResponseUserDto]);
+      (UserMapper.toResponseDtoArray as jest.Mock).mockReturnValue([
+        mockResponseUserDto,
+      ]);
 
       const result = await service.findAll();
 
       expect(result).toEqual([mockResponseUserDto]);
-      expect(repository.find).toHaveBeenCalledWith({ relations: ['socialMedia'] });
+      expect(repository.find).toHaveBeenCalledWith({
+        relations: ['socialMedia'],
+      });
       expect(UserMapper.toResponseDtoArray).toHaveBeenCalledWith([mockUser]);
     });
   });
 
   //findOne
 
-  describe("findOne", () => {
+  describe('findOne', () => {
     it('should return a single user', async () => {
       repository.findOne.mockResolvedValue(mockUser);
-      (UserMapper.toResponseDto as jest.Mock).mockReturnValue(mockResponseUserDto);
+      (UserMapper.toResponseDto as jest.Mock).mockReturnValue(
+        mockResponseUserDto,
+      );
 
       const result = await service.findOne(1);
 
@@ -124,15 +129,17 @@ describe('UsersService', () => {
       repository.create.mockReturnValue(mockUser);
       repository.save.mockResolvedValue(mockUser);
       repository.findOne.mockResolvedValue(mockUser);
-      (UserMapper.toResponseDto as jest.Mock).mockReturnValue(mockResponseUserDto);
+      (UserMapper.toResponseDto as jest.Mock).mockReturnValue(
+        mockResponseUserDto,
+      );
 
       const result = await service.create(dto);
 
       expect(result).toEqual(mockResponseUserDto);
       expect(repository.create).toHaveBeenCalledWith(dto);
       expect(repository.save).toHaveBeenCalledWith(mockUser);
-    })
-  })
+    });
+  });
 
   // update
   describe('update', () => {
@@ -141,7 +148,9 @@ describe('UsersService', () => {
 
       repository.update.mockResolvedValue({ affected: 1 } as any);
       repository.findOne.mockResolvedValue(mockUser);
-      (UserMapper.toResponseDto as jest.Mock).mockReturnValue(mockResponseUserDto);
+      (UserMapper.toResponseDto as jest.Mock).mockReturnValue(
+        mockResponseUserDto,
+      );
 
       const result = await service.update(1, dto);
 
@@ -170,7 +179,9 @@ describe('UsersService', () => {
 
       repository.findOne.mockResolvedValue(mockUser);
       repository.update.mockResolvedValue({ affected: 1 } as any);
-      (UserMapper.toResponseDto as jest.Mock).mockReturnValue(mockResponseUserDto);
+      (UserMapper.toResponseDto as jest.Mock).mockReturnValue(
+        mockResponseUserDto,
+      );
 
       const result = await service.replace(1, dto);
 
@@ -211,5 +222,4 @@ describe('UsersService', () => {
       await expect(service.delete(99)).rejects.toThrow(NotFoundException);
     });
   });
-
 });
