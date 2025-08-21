@@ -2,16 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SocialMediaService } from './social-media.service';
 import { SocialMedia } from '../entities/social-media.entity';
 import { User } from '../entities/user.entity';
-import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { SocialMediaMapper } from './mappers/social-media.mapper';
 
 describe('SocialMediaService', () => {
   let service: SocialMediaService;
-  let socialMediaRepo: Repository<SocialMedia>;
-  let userRepo: Repository<User>;
-
   const mockSocialMediaRepository = {
     find: jest.fn(),
     findOne: jest.fn(),
@@ -41,12 +37,6 @@ describe('SocialMediaService', () => {
     }).compile();
 
     service = module.get<SocialMediaService>(SocialMediaService);
-
-    socialMediaRepo = module.get<Repository<SocialMedia>>(
-      getRepositoryToken(SocialMedia),
-    );
-
-    userRepo = module.get<Repository<User>>(getRepositoryToken(User));
   });
 
   jest
@@ -55,7 +45,7 @@ describe('SocialMediaService', () => {
       id: socialMedia.id,
       name: socialMedia.name,
       url: socialMedia.url,
-      userId: socialMedia.user?.id,
+      userId: socialMedia.user.id,
     }));
 
   jest
@@ -125,25 +115,26 @@ describe('SocialMediaService', () => {
         email: 'user@email.com',
       };
 
-      const socialMediaExists = {
-        id: 1,
-        name: 'socialmedia',
-        url: 'https://instagram.com/user',
-        user: userExists,
-      };
-
-      mockUserRepository.findOne.mockReturnValue(Promise.resolve(userExists));
-      mockSocialMediaRepository.create.mockReturnValue(socialMediaExists);
-      mockSocialMediaRepository.save.mockReturnValue(
-        Promise.resolve(socialMediaExists),
-      );
-      mockSocialMediaRepository.findOne.mockReturnValue(
-        Promise.resolve(socialMediaExists),
-      );
       const createDTO = {
         name: 'socialmedia',
         url: 'https://instagram.com/user',
       };
+
+      const socialMediaToSave = {
+        ...createDTO,
+        user: userExists,
+      };
+
+      const savedSocialMedia = {
+        id: 1,
+        ...createDTO,
+        user: userExists,
+      };
+
+      mockUserRepository.findOne.mockResolvedValueOnce(userExists);
+      mockSocialMediaRepository.create.mockReturnValue(socialMediaToSave);
+      mockSocialMediaRepository.save.mockResolvedValue(savedSocialMedia);
+      mockSocialMediaRepository.findOne.mockResolvedValueOnce(savedSocialMedia);
 
       const response = await service.create(1, createDTO);
 
@@ -153,17 +144,115 @@ describe('SocialMediaService', () => {
         url: 'https://instagram.com/user',
         userId: 1,
       });
+
       expect(mockSocialMediaRepository.create).toHaveBeenCalledWith({
         name: 'socialmedia',
         url: 'https://instagram.com/user',
         user: userExists,
       });
 
-      expect(mockSocialMediaRepository.save).toHaveBeenCalled();
+      expect(mockSocialMediaRepository.save).toHaveBeenCalledWith(
+        socialMediaToSave,
+      );
+
+      expect(mockSocialMediaRepository.findOne).toHaveBeenCalledWith({
+        where: { id: savedSocialMedia.id },
+        relations: ['user'],
+      });
     });
 
-    ////que falle
-    //it('should throw a bad request exception if user does not exist', async () => {});
+    it('should throw a bad request exception if user does not exist', async () => {
+      mockUserRepository.findOne.mockResolvedValue(null);
+
+      const createDTO = {
+        name: 'socialmedia',
+        url: 'https://instagram.com/user',
+      };
+
+      await expect(service.create(1, createDTO)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+  });
+
+  // async updateByUser(
+  //     userId: number,
+  //     socialMediaId: number,
+  //     updateSocialMediaDto: UpdateSocialMediaDto,
+  //   ): Promise<ResponseSocialMediaDto> {
+  //     const socialMedia = await this.socialMediaRepository.findOne({
+  //       where: { id: socialMediaId, user: { id: userId } },
+  //       relations: ['user'],
+  //     });
+
+  //     if (!socialMedia) {
+  //       throw new NotFoundException(
+  //         `Social media with id ${socialMediaId} not found for user ${userId}`,
+  //       );
+  //     }
+  describe('update', () => {
+    //que funque
+    it('should change a social media if it exists', async () => {
+      const userExists = {
+        id: 1,
+        firstName: 'user',
+        lastName: 'userlast',
+        phone: '132654',
+        email: 'user@email.com',
+      };
+      const socialMediaDTO = {
+        id: 1,
+        name: 'socialmedia',
+        url: 'https://instagram.com/user',
+        user: userExists,
+      };
+
+      const socialMediaChanged = {
+        id: 1,
+        name: 'socialmedia2',
+        url: 'https://instagram.com/user3',
+        user: userExists,
+      };
+
+      mockUserRepository.findOne.mockResolvedValueOnce(socialMediaDTO);
+      mockSocialMediaRepository.save.mockResolvedValue(socialMediaChanged);
+
+      const response = await service.updateByUser(1, 1, {
+        name: 'socialmedia2',
+        url: 'https://instagram.com/user3',
+      });
+
+      expect(response).toEqual({
+        id: 1,
+        name: 'socialmedia2',
+        url: 'https://instagram.com/user3',
+        user: userExists,
+      });
+
+      expect(mockSocialMediaRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 1, user: { id: 1 } },
+        relations: ['user'],
+      });
+
+      expect(mockSocialMediaRepository.save).toHaveBeenCalledWith({
+        ...socialMediaDTO,
+        name: 'socialmedia2',
+        url: 'https://instagram.com/user3',
+      });
+    });
+
+    it('should throw a bad request exception if  social media does not exist', async () => {
+      mockSocialMediaRepository.findOne.mockResolvedValueOnce(null);
+
+      await expect(
+        service.updateByUser(1, 99, { name: 'x', url: 'y' }),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(mockSocialMediaRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 99, user: { id: 1 } },
+        relations: ['user'],
+      });
+    });
   });
 
   describe('findOneByUser', () => {

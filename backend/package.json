@@ -73,6 +73,22 @@
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "/dist/",
+      "/coverage/",
+      "/test/",
+      "/src/main.ts",
+      "/src/config/db.config.ts",
+      "/src/pipes",
+      "/src/social-media/mappers",
+      "/src/social-media/dto",
+      "/src/users/dto",
+      "/src/users/mappers",
+      "/src/app.module.ts",
+      "/src/social-media/social-media.module.ts",
+      "/src/users/users.module.ts"
+    ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }
