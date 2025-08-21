@@ -5,7 +5,7 @@ import { create } from 'domain';
 import { Repository } from 'typeorm';
 
 import { ResponseUserDto } from './dto/response-user.dto';
-import { User } from 'src/entities/user.entity';
+import { User } from '../entities/user.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { UserMapper } from './mappers/user.mapper';
 import { NotFoundException } from '@nestjs/common';
