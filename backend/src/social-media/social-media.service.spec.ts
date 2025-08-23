@@ -175,21 +175,6 @@ describe('SocialMediaService', () => {
     });
   });
 
-  // async updateByUser(
-  //     userId: number,
-  //     socialMediaId: number,
-  //     updateSocialMediaDto: UpdateSocialMediaDto,
-  //   ): Promise<ResponseSocialMediaDto> {
-  //     const socialMedia = await this.socialMediaRepository.findOne({
-  //       where: { id: socialMediaId, user: { id: userId } },
-  //       relations: ['user'],
-  //     });
-
-  //     if (!socialMedia) {
-  //       throw new NotFoundException(
-  //         `Social media with id ${socialMediaId} not found for user ${userId}`,
-  //       );
-  //     }
   describe('update', () => {
     //que funque
     it('should change a social media if it exists', async () => {
@@ -208,41 +193,46 @@ describe('SocialMediaService', () => {
       };
 
       const socialMediaChanged = {
-        id: 1,
-        name: 'socialmedia2',
-        url: 'https://instagram.com/user3',
-        user: userExists,
-      };
-
-      mockUserRepository.findOne.mockResolvedValueOnce(socialMediaDTO);
-      mockSocialMediaRepository.save.mockResolvedValue(socialMediaChanged);
-
-      const response = await service.updateByUser(1, 1, {
-        name: 'socialmedia2',
-        url: 'https://instagram.com/user3',
-      });
-
-      expect(response).toEqual({
-        id: 1,
-        name: 'socialmedia2',
-        url: 'https://instagram.com/user3',
-        user: userExists,
-      });
-
-      expect(mockSocialMediaRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 1, user: { id: 1 } },
-        relations: ['user'],
-      });
-
-      expect(mockSocialMediaRepository.save).toHaveBeenCalledWith({
         ...socialMediaDTO,
         name: 'socialmedia2',
         url: 'https://instagram.com/user3',
+      };
+
+      const expectedMediaChanged = {
+        id: 1,
+        name: 'socialmedia2',
+        url: 'https://instagram.com/user3',
+        userId: 1,
+      };
+
+      const updateDTO = {
+        name: 'socialmedia2',
+        url: 'https://instagram.com/user3',
+      };
+
+      mockSocialMediaRepository.findOne
+        .mockResolvedValueOnce(socialMediaDTO)
+        .mockResolvedValueOnce(socialMediaChanged);
+
+      mockSocialMediaRepository.update.mockResolvedValue({ affected: 1 });
+
+      const response = await service.updateByUser(1, 1, updateDTO);
+
+      expect(mockSocialMediaRepository.findOne).toHaveBeenCalledTimes(2);
+      expect(mockSocialMediaRepository.findOne).toHaveBeenNthCalledWith(1, {
+        where: { id: 1, user: { id: 1 } },
+        relations: ['user'],
       });
+      expect(mockSocialMediaRepository.update).toHaveBeenCalledWith(
+        1,
+        updateDTO,
+      );
+
+      expect(response).toEqual(expectedMediaChanged);
     });
 
-    it('should throw a bad request exception if  social media does not exist', async () => {
-      mockSocialMediaRepository.findOne.mockResolvedValueOnce(null);
+    it('should throw a not found  exception if social media does not exist', async () => {
+      mockSocialMediaRepository.findOne.mockResolvedValue(null);
 
       await expect(
         service.updateByUser(1, 99, { name: 'x', url: 'y' }),
@@ -252,6 +242,7 @@ describe('SocialMediaService', () => {
         where: { id: 99, user: { id: 1 } },
         relations: ['user'],
       });
+      expect(mockSocialMediaRepository.update).not.toHaveBeenCalled();
     });
   });
 

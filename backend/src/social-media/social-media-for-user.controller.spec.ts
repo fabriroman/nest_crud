@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 
@@ -173,4 +174,100 @@ describe('SocialMediaForUserController', () => {
       expect(service.create).toHaveBeenCalledWith(userId, createDto);
     });
   });
+
+  // @Patch(':id')
+
+  describe('PATCH /api/users/:userId/social-media/:id', () => {
+    it('should edit a social media for user', async () => {
+      const userId = 1;
+      const id = 1;
+      const updateDto: UpdateSocialMediaDto = {
+        name: 'Twitter1',
+        url: 'https://twitter.com/user2',
+      };
+
+      const updatedSocialMedia = {
+        userId: userId,
+        id: id,
+        name: 'Twitter1',
+        url: 'https://twitter.com/user2',
+      };
+
+      // Arrange
+      jest.spyOn(service, 'updateByUser').mockResolvedValue(updatedSocialMedia);
+
+      // Act
+      const result = await controller.updateSocialMediaForUser(
+        userId,
+        id,
+        updateDto,
+      );
+
+      // Assert
+      expect(service.updateByUser).toHaveBeenCalledWith(userId, id, updateDto);
+      expect(result).toEqual(updatedSocialMedia);
+    });
+
+    it('should throw error when updating fails', async () => {
+      const userId = 1;
+      const id = 99;
+      const updateDto: UpdateSocialMediaDto = {
+        name: 'Invalid',
+        url: '',
+      };
+
+      // Arrange
+      jest
+        .spyOn(service, 'updateByUser')
+        .mockRejectedValue(new Error('Failed to update social media'));
+
+      // Act / Assert
+      await expect(
+        controller.updateSocialMediaForUser(userId, id, updateDto),
+      ).rejects.toThrow();
+      expect(service.updateByUser).toHaveBeenCalledWith(userId, id, updateDto);
+    });
+  });
+
+  // @Delete(':id')
+  //   @HttpCode(HttpStatus.NO_CONTENT)
+  //   async deleteSocialMediaForUser(
+  //     @Param('userId', PositiveIntPipe) userId: number,
+  //     @Param('id', PositiveIntPipe) id: number,
+  //   ): Promise<void> {
+  //     return this.socialMediaService.deleteByUser(userId, id);
+  //   }
+
+  describe('DELETE /api/users/:userId/social-media/:id', () => {
+    it('should delete a social media for user', async () => {
+      const userId = 1;
+      const id = 1;
+
+      // Arrange
+      jest.spyOn(service, 'deleteByUser').mockResolvedValue(undefined);
+
+      // Act
+      await controller.deleteSocialMediaForUser(userId, id);
+
+      // Assert
+      expect(service.deleteByUser).toHaveBeenCalledWith(userId, id);
+    });
+    it('should throw error when deleting fails', async () => {
+      const userId = 1;
+      const id = 99;
+
+      // Arrange
+      jest
+        .spyOn(service, 'deleteByUser')
+        .mockRejectedValue(Error('Failed to delete social media'));
+
+      // Act / Assert
+      await expect(
+        controller.deleteSocialMediaForUser(userId, id),
+      ).rejects.toThrow(NotFoundException);
+      expect(service.deleteByUser).toHaveBeenCalledWith(userId, id);
+    });
+  });
+
+  // Arrange
 });
