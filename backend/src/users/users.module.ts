@@ -1,23 +1,20 @@
-import { Module, ValidationPipe } from '@nestjs/common';
-import { UsersController } from './users.controller';
-import { UsersService } from './users.service';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { UsersService } from './users.service';
+import { UsersController } from './users.controller';
 import { User } from '../entities/user.entity';
-import { APP_PIPE } from '@nestjs/core';
+import { Role } from '../entities/role.entity';
+import { RolesModule } from '../roles/roles.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User])],
-  controllers: [UsersController],
-  providers: [
-    UsersService,
-    {
-      provide: APP_PIPE,
-      useValue: new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-      }),
-    },
+  imports: [
+    TypeOrmModule.forFeature([User, Role]), 
+    RolesModule, 
+    forwardRef(() => AuthModule)
   ],
+  controllers: [UsersController],
+  providers: [UsersService],
+  exports: [UsersService],
 })
 export class UsersModule {}
