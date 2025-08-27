@@ -1,0 +1,103 @@
+body {
+  background-color: #f0f0f0;
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+/* Contenedor principal */
+.users-container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 20px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.titulo {
+  text-align: center;
+  color: #333;
+  font-size: 2em;
+  margin-bottom: 20px;
+}
+
+.user-form {
+  margin-bottom: 30px;
+}
+
+.user-form h2 {
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.user-form input {
+  width: 80%;
+  padding: 10px;
+  margin: 5px 0;
+  border: 1px solid #ccc;
+  color: #333;
+  background-color: rgb(246, 245, 242);
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.user-form button {
+  margin: 5px;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+}
+
+.user-form button:hover {
+  background-color: #0056b3;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  padding: 12px;
+  margin-bottom: 10px;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.user-info {
+  font-size: 1em;
+  color: #333;
+}
+
+.user-actions button {
+  padding: 6px 10px;
+  margin-left: 5px;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+}
+
+.user-actions .view-button {
+  background-color: #28a745;
+}
+
+.user-actions .edit-button {
+  background-color: #ffc107;
+  color: black;
+}
+
+.user-actions .delete-button {
+  background-color: #dc3545;
+}
+
+.user-actions button:hover {
+  opacity: 0.8;
+}
