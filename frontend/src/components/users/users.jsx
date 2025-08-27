@@ -5,7 +5,7 @@ import "./user.css";
 
 const API_URL = "http://localhost:3000/api/users";
 
-const Users = ({ onSelectUser }) => {
+const Users = ({ onSelectUser, isUser, isAdmin, currentUserId }) => {
   const [users, setUsers] = useState([]);
   const [formData, setFormData] = useState({
     firstName: "",
@@ -24,10 +24,17 @@ const Users = ({ onSelectUser }) => {
     try {
       const res = await fetch(API_URL);
       if (!res.ok) throw new Error("Error al obtener usuarios");
-      const data = await res.json();
-      setUsers(data);
+
+      const fetchedData = await res.json();
+
+      const filteredUsers =
+        isUser && currentUserId
+          ? fetchedData.filter((u) => u.id === currentUserId)
+          : fetchedData;
+
+      setUsers(filteredUsers);
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error al cargar usuarios:", error);
     }
   };
 
@@ -120,13 +127,15 @@ const Users = ({ onSelectUser }) => {
     <div className="users-container">
       <h1 className="titulo">Gestión de Usuarios</h1>
 
-      <UserForm
-        formData={formData}
-        onChange={handleChange}
-        onSubmit={handleSubmit}
-        isEditing={!!editingUser}
-        onCancel={onCancelEdit}
-      />
+      {(isAdmin || editingUser) && (
+        <UserForm
+          formData={formData}
+          onChange={handleChange}
+          onSubmit={handleSubmit}
+          isEditing={!!editingUser}
+          onCancel={onCancelEdit}
+        />
+      )}
 
       <h2>Lista de Usuarios</h2>
       <UserList

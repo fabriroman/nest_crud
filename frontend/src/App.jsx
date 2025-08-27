@@ -8,6 +8,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   const handleSelectUser = (userId) => {
     setSelectedUserId(userId);
@@ -20,6 +21,7 @@ function App() {
   const handleLoginSuccess = () => {
     setIsAuthenticated(true);
     setUserRole("user");
+    setCurrentUserId(1); //para purbea
     //setUserRole(user.role);
   };
 
@@ -58,6 +60,7 @@ function App() {
             onSelectUser={handleSelectUser}
             isUser={userRole === "user"}
             isAdmin={userRole === "admin"}
+            currentUserId={currentUserId}
           />
         )}
       </main>
