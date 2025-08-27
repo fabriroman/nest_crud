@@ -3,22 +3,34 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SocialMediaModule } from './social-media/social-media.module';
+import { AuthModule } from './auth/auth.module';
+import { RolesModule } from './roles/roles.module';
 import dbConfig from './config/db.config';
+import { JwtModule } from '@nestjs/jwt';
+import jwtConfig from './config/jwt.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       expandVariables: true,
-      load: [dbConfig],
+      load: [dbConfig, jwtConfig],
     }),
     TypeOrmModule.forRootAsync({
       useFactory: dbConfig,
     }),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: jwtConfig,
+      global: true,
+      inject: [ConfigService],
+    }),
     UsersModule,
     SocialMediaModule,
+    AuthModule,
+    RolesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
