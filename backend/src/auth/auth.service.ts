@@ -1,13 +1,17 @@
 import { JwtService } from '@nestjs/jwt';
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { SignupDto } from './dtos/signup.dto';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dtos/login.dto';
+import { Role } from '../roles/roles.enum';
 
 @Injectable()
 export class AuthService {
-
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
@@ -16,27 +20,32 @@ export class AuthService {
   async signup(signupData: SignupDto) {
     const { email, password, firstName, lastName, phone } = signupData;
 
-
     //Check if email is in use
     const emailInUse = await this.usersService.existsEmail(email);
     if (emailInUse) {
       throw new BadRequestException('Email already in use');
     }
-    
 
     // Create user
-    await this.usersService.create({
+    const newUser = await this.usersService.create({
       email,
       password: password,
       firstName,
       lastName,
       phone,
     });
+
+    const defaultRole = await this.usersService.findRoleByName(Role.USER);
+    if (defaultRole) {
+      await this.usersService.assignRole(newUser.id, defaultRole.id);
+    }
+
+    return newUser;
   }
 
   async login(credentials: LoginDto) {
     const { email, password } = credentials;
-    
+
     //Find if user exists by email
     const user = await this.usersService.findByEmailForAuth(email);
     if (!user) {
@@ -60,13 +69,14 @@ export class AuthService {
   async getUserRoles(userId: number) {
     const user = await this.usersService.findOne(userId);
 
-    if (!user) throw new BadRequestException("User not found");
+    if (!user) throw new BadRequestException('User not found');
 
     return user.roles || [];
   }
 
   async generateUserToken(userId: number) {
-    return this.jwtService.sign({ userId });
+    const roles = await this.getUserRoles(userId);
+    console.log(roles);
+    return this.jwtService.sign({ userId, roles });
   }
 }
-  
