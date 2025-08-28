@@ -36,6 +36,15 @@ const UserForm = ({ formData, onChange, onSubmit, isEditing, onCancel }) => {
         required
       />
 
+      <input
+        type="password"
+        name="password"
+        placeholder="Contraseña"
+        value={formData.password || ""}
+        onChange={onChange}
+        required={!isEditing} // solo obligatorio al crear
+      />
+
       {/* Contenedor para los botones */}
       <div className="form-buttons">
         <button type="submit">{isEditing ? "Actualizar" : "Crear"}</button>

@@ -18,11 +18,27 @@ function App() {
     setSelectedUserId(null);
   };
 
-  const handleLoginSuccess = () => {
-    setIsAuthenticated(true);
-    setUserRole("user");
-    setCurrentUserId(1); //para purbea
-    //setUserRole(user.role);
+  const handleLoginSuccess = (userId) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("No token found");
+
+      const tokenParts = token.split(".");
+      if (tokenParts.length !== 3) {
+        console.error("Invalid token format");
+        localStorage.removeItem("token");
+        return;
+      }
+
+      const decoded = JSON.parse(atob(tokenParts[1]));
+      setUserRole(decoded.roles[0]?.name || "user");
+      setCurrentUserId(userId);
+      setIsAuthenticated(true);
+    } catch (error) {
+      console.error("Error decoding token:", error);
+      localStorage.removeItem("token");
+      return;
+    }
   };
 
   const handleLogOut = () => {
