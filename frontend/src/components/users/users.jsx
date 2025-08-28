@@ -172,7 +172,8 @@ const Users = ({ onSelectUser, isUser, isAdmin, currentUserId }) => {
     <div className="users-container">
       <h1 className="titulo">Gestión de Usuarios</h1>
 
-      {isAdmin && (
+      {(isAdmin ||
+        (isUser && editingUser && editingUser.id === currentUserId)) && (
         <UserForm
           formData={formData}
           onChange={handleChange}

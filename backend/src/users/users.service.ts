@@ -74,7 +74,16 @@ export class UsersService {
       where: { id: savedUser.id },
       relations: ['socialMedia', 'roles'],
     });
+    await this.assignRoleByName(savedUser.id, "user");
     return UserMapper.toResponseDto(userWithRelations!);
+  }
+
+  async assignRoleByName(userId: number, role: string): Promise<void> {
+    const roleId = await this.rolesService.findByName(role);
+    if (!roleId) {
+      throw new NotFoundException(`Role with name ${role} not found`);
+    }
+    await this.assignRole(userId, roleId.id);
   }
 
   async update(
