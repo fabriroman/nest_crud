@@ -23,12 +23,14 @@ function App() {
     setUserRole("user");
     setCurrentUserId(1); //para purbea
     //setUserRole(user.role);
+    localStorage.setItem("token", accessToken);
   };
 
   const handleLogOut = () => {
     setIsAuthenticated(false);
     setUserRole(null);
     setSelectedUserId(null);
+    localStorage.removeItem("token");
   };
 
   if (!isAuthenticated) {
