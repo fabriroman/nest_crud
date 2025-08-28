@@ -13,6 +13,7 @@ export class UserMapper {
       socialMedia: user.socialMedia
         ? SocialMediaMapper.toResponseDtoArray(user.socialMedia, user.id)
         : [],
+      roles: user.roles || [],
     };
   }
 

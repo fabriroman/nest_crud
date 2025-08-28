@@ -1,3 +1,4 @@
+import { AuthenticationGuard } from './../guards/authentication.guards';
 import {
   Body,
   Controller,
@@ -8,13 +9,18 @@ import {
   Patch,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { SocialMediaService } from './social-media.service';
 import { CreateSocialMediaDto } from './dto/create-social-media.dto';
 import { UpdateSocialMediaDto } from './dto/update-social-media.dto';
 import { ResponseSocialMediaDto } from './dto/response-social-media.dto';
 import { PositiveIntPipe } from '../pipes/positive-int.pipe';
+import { AuthorizationGuard } from 'src/guards/authorization.guards';
+import { Roles } from 'src/decorators/roles.decorator';
 
+@Roles(['admin', 'user'])
+@UseGuards(AuthenticationGuard, AuthorizationGuard)
 @Controller('api/users/:userId/social-media')
 export class SocialMediaForUserController {
   constructor(private readonly socialMediaService: SocialMediaService) {}
