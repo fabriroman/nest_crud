@@ -15,6 +15,9 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
+  async findRoleByName(name: string): Promise<Role | null> {
+    return this.roleRepository.findOne({ where: { name } });
+  }
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
@@ -64,14 +67,23 @@ export class UsersService {
     // Hash password before saving
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
     const userData = { ...createUserDto, password: hashedPassword };
-    
+
     const user = this.userRepository.create(userData);
     const savedUser = await this.userRepository.save(user);
     const userWithRelations = await this.userRepository.findOne({
       where: { id: savedUser.id },
       relations: ['socialMedia', 'roles'],
     });
+    await this.assignRoleByName(savedUser.id, "user");
     return UserMapper.toResponseDto(userWithRelations!);
+  }
+
+  async assignRoleByName(userId: number, role: string): Promise<void> {
+    const roleId = await this.rolesService.findByName(role);
+    if (!roleId) {
+      throw new NotFoundException(`Role with name ${role} not found`);
+    }
+    await this.assignRole(userId, roleId.id);
   }
 
   async update(
@@ -82,7 +94,7 @@ export class UsersService {
     if (updateUserDto.password) {
       updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
     }
-    
+
     await this.userRepository.update(id, updateUserDto);
     const user = await this.userRepository.findOne({
       where: { id },
@@ -128,7 +140,7 @@ export class UsersService {
       where: { id: userId },
       relations: ['roles'],
     });
-    
+
     if (!user) {
       throw new NotFoundException(`User with id ${userId} not found`);
     }
@@ -139,7 +151,7 @@ export class UsersService {
     }
 
     // Check if user already has this role
-    const hasRole = user.roles?.some(r => r.id === roleId);
+    const hasRole = user.roles?.some((r) => r.id === roleId);
     if (hasRole) {
       return; // User already has this role
     }
@@ -150,7 +162,9 @@ export class UsersService {
     }
 
     // Add the complete role object to maintain proper relations
-    const roleToAdd = await this.roleRepository.findOne({ where: { id: roleId } });
+    const roleToAdd = await this.roleRepository.findOne({
+      where: { id: roleId },
+    });
     if (roleToAdd) {
       user.roles.push(roleToAdd);
       await this.userRepository.save(user);
@@ -162,7 +176,7 @@ export class UsersService {
       where: { id: userId },
       relations: ['roles'],
     });
-    
+
     if (!user) {
       throw new NotFoundException(`User with id ${userId} not found`);
     }
@@ -172,13 +186,13 @@ export class UsersService {
     }
 
     // Check if user actually has this role
-    const hasRole = user.roles.some(r => r.id === roleId);
+    const hasRole = user.roles.some((r) => r.id === roleId);
     if (!hasRole) {
       return; // User doesn't have this role
     }
 
     // Remove role from user
-    user.roles = user.roles.filter(r => r.id !== roleId);
+    user.roles = user.roles.filter((r) => r.id !== roleId);
     await this.userRepository.save(user);
   }
 
@@ -187,7 +201,7 @@ export class UsersService {
       where: { id: userId },
       relations: ['roles'],
     });
-    
+
     if (!user) {
       throw new NotFoundException(`User with id ${userId} not found`);
     }

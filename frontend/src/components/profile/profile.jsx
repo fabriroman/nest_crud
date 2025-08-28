@@ -3,8 +3,7 @@ import UserProfileInfo from "./userProfileInfo";
 import SocialMediaList from "./socialMediaList";
 import AddSocialMediaForm from "./addSocialMediaForm";
 import "./profile.css";
-
-const API_URL = "http://localhost:3000/api";
+import { api } from "../../api";
 
 const Profile = ({ userId }) => {
   const [user, setUser] = useState(null);
@@ -17,16 +16,16 @@ const Profile = ({ userId }) => {
 
       try {
         // Obtener usuario
-        const userRes = await fetch(`${API_URL}/users/${userId}`);
-        const userData = await userRes.json();
+        const userData = await api.get(`api/users/${userId}`);
+        if (!userData) {
+          console.warn("No se encontró usuario");
+          return;
+        }
         setUser(userData);
 
         // Obtener redes sociales
-        const socialRes = await fetch(
-          `${API_URL}/users/${userId}/social-media`
-        );
-        const socialData = await socialRes.json();
-        setSocialMedia(socialData);
+        const socialData = await api.get(`api/users/${userId}/social-media`);
+        setSocialMedia(socialData || []);
       } catch (error) {
         console.error("Error al cargar el perfil:", error);
       }
@@ -44,19 +43,12 @@ const Profile = ({ userId }) => {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${API_URL}/users/${userId}/social-media`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newSocialMedia),
-      });
-
-      if (!res.ok) throw new Error("Error al crear");
-
-      const created = await res.json();
+      const created = await api.post(
+        `api/users/${userId}/social-media`,
+        newSocialMedia
+      );
       setSocialMedia([...socialMedia, created]);
-      setNewSocialMedia({ name: "", url: "" }); // limpiar formulario
+      setNewSocialMedia({ name: "", url: "" });
     } catch (error) {
       console.error("Error:", error);
     }
@@ -65,9 +57,7 @@ const Profile = ({ userId }) => {
   // Eliminar red social
   const handleDelete = async (id) => {
     try {
-      await fetch(`${API_URL}/users/${userId}/social-media/${id}`, {
-        method: "DELETE",
-      });
+      await api.delete(`api/users/${userId}/social-media/${id}`);
       setSocialMedia(socialMedia.filter((sm) => sm.id !== id));
     } catch (error) {
       console.error("Error:", error);
@@ -90,7 +80,11 @@ const Profile = ({ userId }) => {
 
       {/* Redes sociales */}
       <h2>Redes Sociales</h2>
-      <SocialMediaList socialMedia={socialMedia} onDelete={handleDelete} />
+      {socialMedia.length === 0 ? (
+        <p>No hay redes sociales registradas.</p>
+      ) : (
+        <SocialMediaList socialMedia={socialMedia} onDelete={handleDelete} />
+      )}
 
       {/* Formulario para añadir */}
       <h3>Añadir Red Social</h3>
