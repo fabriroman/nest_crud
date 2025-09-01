@@ -3,9 +3,9 @@ import { RolesService } from './roles.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { ResponseRoleDto } from './dto/response-role.dto';
-import { AuthenticationGuard } from 'src/guards/authentication.guards';
-import { AuthorizationGuard } from 'src/guards/authorization.guards';
-import { Roles } from 'src/decorators/roles.decorator';
+import { Roles } from 'src/security/decorators/roles.decorator';
+import { AuthenticationGuard } from 'src/security/guards/authentication.guard';
+import { AuthorizationGuard } from 'src/security/guards/authorization.guard';
 
 @Roles(['admin'])
 @UseGuards(AuthenticationGuard, AuthorizationGuard)

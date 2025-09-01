@@ -8,7 +8,6 @@ import { UsersService } from '../users/users.service';
 import { SignupDto } from './dtos/signup.dto';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dtos/login.dto';
-import { Role } from '../roles/roles.enum';
 
 @Injectable()
 export class AuthService {
@@ -35,10 +34,8 @@ export class AuthService {
       phone,
     });
 
-    const defaultRole = await this.usersService.findRoleByName(Role.USER);
-    if (defaultRole) {
-      await this.usersService.assignRole(newUser.id, defaultRole.id);
-    }
+    // Assign default role
+    await this.usersService.assignRoleByName(newUser.id, "user");
 
     return newUser;
   }
@@ -66,17 +63,7 @@ export class AuthService {
     };
   }
 
-  async getUserRoles(userId: number) {
-    const user = await this.usersService.findOne(userId);
-
-    if (!user) throw new BadRequestException('User not found');
-
-    return user.roles || [];
-  }
-
   async generateUserToken(userId: number) {
-    const roles = await this.getUserRoles(userId);
-    console.log(roles);
-    return this.jwtService.sign({ userId, roles });
+    return this.jwtService.sign({ userId });
   }
 }

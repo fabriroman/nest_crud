@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -18,9 +19,11 @@ import { ResponseUserDto } from './dto/response-user.dto';
 import { ReplaceUserDto } from './dto/replace-user.dto';
 import { PositiveIntPipe } from '../pipes/positive-int.pipe';
 import { ResponseRoleDto } from '../roles/dto/response-role.dto';
-import { AuthenticationGuard } from 'src/guards/authentication.guards';
-import { AuthorizationGuard } from 'src/guards/authorization.guards';
-import { Roles } from 'src/decorators/roles.decorator';
+import { Roles } from 'src/security/decorators/roles.decorator';
+import { AuthenticationGuard } from 'src/security/guards/authentication.guard';
+import { AuthorizationGuard } from 'src/security/guards/authorization.guard';
+import { OwnsResourceUserGuard } from 'src/security/guards/owns.resource.user.guard';
+import { Request } from 'express';
 
 @Controller('/api/users')
 export class UsersController {
@@ -34,12 +37,14 @@ export class UsersController {
   }
 
   @Roles(['admin', 'user'])
-  @UseGuards(AuthenticationGuard, AuthorizationGuard)
+  @UseGuards(AuthenticationGuard, AuthorizationGuard, OwnsResourceUserGuard)
   @Get(':id')
   async getUser(
     @Param('id', PositiveIntPipe) id: number,
+    @Req() request: Request & { userId: number; userRoles: string[] },
   ): Promise<ResponseUserDto> {
-    return this.usersService.findOne(id);
+    const actor = { userId: request.userId, roles: request.userRoles };
+    return this.usersService.findOne(id, actor);
   }
 
   @Roles(['admin'])
@@ -53,23 +58,27 @@ export class UsersController {
   }
 
   @Roles(['admin', 'user'])
-  @UseGuards(AuthenticationGuard, AuthorizationGuard)
+  @UseGuards(AuthenticationGuard, AuthorizationGuard, OwnsResourceUserGuard)
   @Put(':id')
   async replaceUser(
     @Param('id', PositiveIntPipe) id: number,
     @Body() replaceUserDto: ReplaceUserDto,
+    @Req() request: Request & { userId: number; userRoles: string[] },
   ): Promise<ResponseUserDto> {
-    return this.usersService.replace(id, replaceUserDto);
+    const actor = { userId: request.userId, roles: request.userRoles };
+    return this.usersService.replace(id, replaceUserDto, actor);
   }
 
   @Roles(['admin', 'user'])
-  @UseGuards(AuthenticationGuard, AuthorizationGuard)
+  @UseGuards(AuthenticationGuard, AuthorizationGuard, OwnsResourceUserGuard)
   @Patch(':id')
   async updateUser(
     @Param('id', PositiveIntPipe) id: number,
     @Body() updateUserDto: UpdateUserDto,
+    @Req() request: Request & { userId: number; userRoles: string[] },
   ): Promise<ResponseUserDto> {
-    return this.usersService.update(id, updateUserDto);
+    const actor = { userId: request.userId, roles: request.userRoles };
+    return this.usersService.update(id, updateUserDto, actor);
   }
 
   @Roles(['admin'])

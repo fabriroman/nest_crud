@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -9,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { RolesModule } from './roles/roles.module';
 import dbConfig from './config/db.config';
 import { JwtModule } from '@nestjs/jwt';
+import { SecurityModule } from './security/security.module';
 import jwtConfig from './config/jwt.config';
 
 @Module({
@@ -31,8 +30,9 @@ import jwtConfig from './config/jwt.config';
     SocialMediaModule,
     AuthModule,
     RolesModule,
+    SecurityModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

@@ -1,4 +1,4 @@
-import { AuthenticationGuard } from './../guards/authentication.guards';
+import { AuthenticationGuard } from '../security/guards/authentication.guard';
 import {
   Body,
   Controller,
@@ -10,17 +10,20 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Req,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { SocialMediaService } from './social-media.service';
 import { CreateSocialMediaDto } from './dto/create-social-media.dto';
 import { UpdateSocialMediaDto } from './dto/update-social-media.dto';
 import { ResponseSocialMediaDto } from './dto/response-social-media.dto';
 import { PositiveIntPipe } from '../pipes/positive-int.pipe';
-import { AuthorizationGuard } from 'src/guards/authorization.guards';
-import { Roles } from 'src/decorators/roles.decorator';
+import { AuthorizationGuard } from 'src/security/guards/authorization.guard';
+import { OwnsResourceUserGuard } from 'src/security/guards/owns.resource.user.guard';
+import { Roles } from 'src/security/decorators/roles.decorator';
 
 @Roles(['admin', 'user'])
-@UseGuards(AuthenticationGuard, AuthorizationGuard)
+@UseGuards(AuthenticationGuard, AuthorizationGuard, OwnsResourceUserGuard)
 @Controller('api/users/:userId/social-media')
 export class SocialMediaForUserController {
   constructor(private readonly socialMediaService: SocialMediaService) {}
@@ -28,16 +31,20 @@ export class SocialMediaForUserController {
   @Get()
   async getSocialMediasByUser(
     @Param('userId', PositiveIntPipe) userId: number,
+    @Req() req: Request & { userId: number; userRoles: string[] },
   ): Promise<ResponseSocialMediaDto[]> {
-    return this.socialMediaService.findByUser(userId);
+    const actor = { userId: req.userId, roles: req.userRoles };
+    return this.socialMediaService.findByUser(userId, actor);
   }
 
   @Get(':id')
   async getSocialMediaByUser(
     @Param('userId', PositiveIntPipe) userId: number,
     @Param('id', PositiveIntPipe) id: number,
+    @Req() req: Request & { userId: number; userRoles: string[] },
   ): Promise<ResponseSocialMediaDto> {
-    return this.socialMediaService.findOneByUser(userId, id);
+    const actor = { userId: req.userId, roles: req.userRoles };
+    return this.socialMediaService.findOneByUser(userId, id, actor);
   }
 
   @Post()
@@ -45,8 +52,10 @@ export class SocialMediaForUserController {
   async createSocialMediaForUser(
     @Param('userId', PositiveIntPipe) userId: number,
     @Body() createSocialMediaDto: CreateSocialMediaDto,
+    @Req() req: Request & { userId: number; userRoles: string[] },
   ): Promise<ResponseSocialMediaDto> {
-    return this.socialMediaService.create(userId, createSocialMediaDto);
+    const actor = { userId: req.userId, roles: req.userRoles };
+    return this.socialMediaService.create(userId, createSocialMediaDto, actor);
   }
 
   @Patch(':id')
@@ -54,12 +63,10 @@ export class SocialMediaForUserController {
     @Param('userId', PositiveIntPipe) userId: number,
     @Param('id', PositiveIntPipe) id: number,
     @Body() updateSocialMediaDto: UpdateSocialMediaDto,
+    @Req() req: Request & { userId: number; userRoles: string[] },
   ): Promise<ResponseSocialMediaDto> {
-    return this.socialMediaService.updateByUser(
-      userId,
-      id,
-      updateSocialMediaDto,
-    );
+    const actor = { userId: req.userId, roles: req.userRoles };
+    return this.socialMediaService.updateByUser(userId, id, updateSocialMediaDto, actor);
   }
 
   @Delete(':id')
@@ -67,7 +74,9 @@ export class SocialMediaForUserController {
   async deleteSocialMediaForUser(
     @Param('userId', PositiveIntPipe) userId: number,
     @Param('id', PositiveIntPipe) id: number,
+    @Req() req: Request & { userId: number; userRoles: string[] },
   ): Promise<void> {
-    return this.socialMediaService.deleteByUser(userId, id);
+    const actor = { userId: req.userId, roles: req.userRoles };
+    return this.socialMediaService.deleteByUser(userId, id, actor);
   }
 }

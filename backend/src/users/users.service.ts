@@ -1,7 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
-import { Role } from '../entities/role.entity';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -12,17 +11,13 @@ import { RolesService } from '../roles/roles.service';
 import { ResponseRoleDto } from '../roles/dto/response-role.dto';
 import { RoleMapper } from '../roles/mappers/role.mapper';
 import * as bcrypt from 'bcrypt';
+import { ensureOwnershipOrAdmin } from 'src/security/ensure-ownership-or-admin';
 
 @Injectable()
 export class UsersService {
-  async findRoleByName(name: string): Promise<Role | null> {
-    return this.roleRepository.findOne({ where: { name } });
-  }
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    @InjectRepository(Role)
-    private roleRepository: Repository<Role>,
     private rolesService: RolesService,
   ) {}
 
@@ -33,7 +28,11 @@ export class UsersService {
     return UserMapper.toResponseDtoArray(users);
   }
 
-  async findOne(id: number): Promise<ResponseUserDto> {
+  async findOne(
+    id: number,
+    actor?: { userId: number; roles: string[] },
+  ): Promise<ResponseUserDto> {
+    if (actor) ensureOwnershipOrAdmin(actor, id);
     const user = await this.userRepository.findOne({
       where: { id },
       relations: ['socialMedia', 'roles'],
@@ -74,7 +73,7 @@ export class UsersService {
       where: { id: savedUser.id },
       relations: ['socialMedia', 'roles'],
     });
-    await this.assignRoleByName(savedUser.id, "user");
+    
     return UserMapper.toResponseDto(userWithRelations!);
   }
 
@@ -89,7 +88,9 @@ export class UsersService {
   async update(
     id: number,
     updateUserDto: UpdateUserDto,
+    actor?: { userId: number; roles: string[] },
   ): Promise<ResponseUserDto> {
+    if (actor) ensureOwnershipOrAdmin(actor, id);
     // Hash password if it's being updated
     if (updateUserDto.password) {
       updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
@@ -109,7 +110,9 @@ export class UsersService {
   async replace(
     id: number,
     replaceUserDto: ReplaceUserDto,
+    actor?: { userId: number; roles: string[] },
   ): Promise<ResponseUserDto> {
+    if (actor) ensureOwnershipOrAdmin(actor, id);
     const existingUser = await this.userRepository.findOne({ where: { id } });
     if (!existingUser) {
       throw new NotFoundException(`User with id ${id} not found`);
@@ -156,44 +159,23 @@ export class UsersService {
       return; // User already has this role
     }
 
-    // Initialize roles array if it doesn't exist
-    if (!user.roles) {
-      user.roles = [];
-    }
-
     // Add the complete role object to maintain proper relations
-    const roleToAdd = await this.roleRepository.findOne({
-      where: { id: roleId },
-    });
-    if (roleToAdd) {
-      user.roles.push(roleToAdd);
-      await this.userRepository.save(user);
-    }
+    await this.userRepository.createQueryBuilder()
+      .relation(User, "roles")
+      .of(userId)
+      .add(role.id);
   }
 
   async removeRole(userId: number, roleId: number): Promise<void> {
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-      relations: ['roles'],
-    });
-
+    const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException(`User with id ${userId} not found`);
     }
 
-    if (!user.roles || user.roles.length === 0) {
-      return; // User has no roles to remove
-    }
-
-    // Check if user actually has this role
-    const hasRole = user.roles.some((r) => r.id === roleId);
-    if (!hasRole) {
-      return; // User doesn't have this role
-    }
-
-    // Remove role from user
-    user.roles = user.roles.filter((r) => r.id !== roleId);
-    await this.userRepository.save(user);
+    await this.userRepository.createQueryBuilder()
+      .relation(User, 'roles')
+      .of(userId)
+      .remove(roleId);
   }
 
   async getUserRoles(userId: number): Promise<ResponseRoleDto[]> {
@@ -209,4 +191,4 @@ export class UsersService {
     // Use the RoleMapper to convert to DTOs
     return RoleMapper.toResponseDtoArray(user.roles || []);
   }
-}
+ }

@@ -11,6 +11,7 @@ import { CreateSocialMediaDto } from './dto/create-social-media.dto';
 import { UpdateSocialMediaDto } from './dto/update-social-media.dto';
 import { ResponseSocialMediaDto } from './dto/response-social-media.dto';
 import { SocialMediaMapper } from './mappers/social-media.mapper';
+import { ensureOwnershipOrAdmin } from 'src/security/ensure-ownership-or-admin';
 
 @Injectable()
 export class SocialMediaService {
@@ -21,7 +22,11 @@ export class SocialMediaService {
     private userRepository: Repository<User>,
   ) {}
 
-  async findByUser(userId: number): Promise<ResponseSocialMediaDto[]> {
+  async findByUser(
+    userId: number,
+    actor?: { userId: number; roles: string[] },
+  ): Promise<ResponseSocialMediaDto[]> {
+    if (actor) ensureOwnershipOrAdmin(actor, userId);
     const socialMedias = await this.socialMediaRepository.find({
       where: { user: { id: userId } },
       relations: ['user'],
@@ -32,7 +37,9 @@ export class SocialMediaService {
   async create(
     userId: number,
     createSocialMediaDto: CreateSocialMediaDto,
+    actor?: { userId: number; roles: string[] },
   ): Promise<ResponseSocialMediaDto> {
+    if (actor) ensureOwnershipOrAdmin(actor, userId);
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new BadRequestException(`User with id ${userId} not found`);
@@ -57,7 +64,9 @@ export class SocialMediaService {
   async findOneByUser(
     userId: number,
     socialMediaId: number,
+    actor?: { userId: number; roles: string[] },
   ): Promise<ResponseSocialMediaDto> {
+    if (actor) ensureOwnershipOrAdmin(actor, userId);
     const socialMedia = await this.socialMediaRepository.findOne({
       where: { id: socialMediaId, user: { id: userId } },
       relations: ['user'],
@@ -76,7 +85,9 @@ export class SocialMediaService {
     userId: number,
     socialMediaId: number,
     updateSocialMediaDto: UpdateSocialMediaDto,
+    actor?: { userId: number; roles: string[] },
   ): Promise<ResponseSocialMediaDto> {
+    if (actor) ensureOwnershipOrAdmin(actor, userId);
     const socialMedia = await this.socialMediaRepository.findOne({
       where: { id: socialMediaId, user: { id: userId } },
       relations: ['user'],
@@ -100,7 +111,12 @@ export class SocialMediaService {
     return SocialMediaMapper.toResponseDto(updatedSocialMedia!);
   }
 
-  async deleteByUser(userId: number, socialMediaId: number): Promise<void> {
+  async deleteByUser(
+    userId: number,
+    socialMediaId: number,
+    actor?: { userId: number; roles: string[] },
+  ): Promise<void> {
+    if (actor) ensureOwnershipOrAdmin(actor, userId);
     const socialMedia = await this.socialMediaRepository.findOne({
       where: { id: socialMediaId, user: { id: userId } },
     });

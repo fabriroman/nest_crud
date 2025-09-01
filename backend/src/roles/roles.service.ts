@@ -15,6 +15,17 @@ export class RolesService {
     private roleRepository: Repository<Role>,
   ) {}
 
+  async getRolesByUserId(userId: number): Promise<ResponseRoleDto[]> {
+    const roles = await this.roleRepository.find({
+      where: { users: { id: userId } },
+      relations: ['users'],
+    });
+    if (!roles || roles.length === 0) {
+      throw new NotFoundException(`No roles found for user with id ${userId}`);
+    }
+    return RoleMapper.toResponseDtoArray(roles);
+  }
+
   async findAll(): Promise<ResponseRoleDto[]> {
     const roles = await this.roleRepository.find();
     return RoleMapper.toResponseDtoArray(roles);

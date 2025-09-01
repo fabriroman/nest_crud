@@ -5,12 +5,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { SocialMedia } from '../entities/social-media.entity';
 import { User } from '../entities/user.entity';
 import { APP_PIPE } from '@nestjs/core';
-import { AuthModule } from '../auth/auth.module';
+import { SecurityModule } from 'src/security/security.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([SocialMedia, User]),
-    forwardRef(() => AuthModule)
+    SecurityModule,
   ],
   controllers: [SocialMediaForUserController],
   providers: [
