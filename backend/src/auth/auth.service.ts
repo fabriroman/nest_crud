@@ -2,18 +2,22 @@ import { JwtService } from '@nestjs/jwt';
 import {
   BadRequestException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { SignupDto } from './dtos/signup.dto';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dtos/login.dto';
+import { RefreshTokenDto } from './dtos/refresh-token.dto';
+import { RefreshTokenService } from 'src/refresh-token/refresh-token.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly refreshTokenService: RefreshTokenService,
   ) {}
 
   async signup(signupData: SignupDto) {
@@ -55,15 +59,44 @@ export class AuthService {
       throw new UnauthorizedException('Wrong credentials');
     }
 
-    //Generate JWT token
-    const accessToken = await this.generateUserToken(user.id);
+    //Generate JWT token and refresh token
+    const tokens = await this.generateUserTokens(user.id);
     return {
-      accessToken,
+      ...tokens,
       userId: user.id,
     };
   }
 
-  async generateUserToken(userId: number) {
+  async generateUserTokens(userId: number) {
+    return {
+      accessToken: await this.generateAccessToken(userId),
+      refreshToken: (await this.refreshTokenService.createRefreshToken(userId)).token,
+    };
+  }
+
+  async generateAccessToken(userId: number) {
     return this.jwtService.sign({ userId });
+  }
+
+  async refreshToken(refreshTokenDto: RefreshTokenDto) {
+    const { refreshToken, userId } = refreshTokenDto;
+    
+    try {
+      const token = await this.refreshTokenService.findByTokenAndUserId(refreshToken, userId);
+
+      if (token.expiresAt < new Date()) {
+        await this.refreshTokenService.deleteById(token.id);
+        throw new UnauthorizedException('Refresh token expired');
+      }
+      
+      const newAccessToken = await this.generateAccessToken(userId);
+      return {'newAccessToken': newAccessToken};
+      
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new UnauthorizedException('Refresh token invalid or expired');
+      }
+      throw new UnauthorizedException('Error refreshing token');
+    }
   }
 }

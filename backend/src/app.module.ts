@@ -8,6 +8,7 @@ import { RolesModule } from './roles/roles.module';
 import dbConfig from './config/db.config';
 import { JwtModule } from '@nestjs/jwt';
 import { SecurityModule } from './security/security.module';
+import { RefreshTokenModule } from './refresh-token/refresh-token.module';
 import jwtConfig from './config/jwt.config';
 
 @Module({
@@ -31,6 +32,7 @@ import jwtConfig from './config/jwt.config';
     AuthModule,
     RolesModule,
     SecurityModule,
+    RefreshTokenModule,
   ],
   controllers: [],
   providers: [],
